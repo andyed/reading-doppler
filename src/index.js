@@ -264,7 +264,7 @@ export class ReadingDepth {
  *   'reading_depth_flush' — periodic with per-paragraph detail
  *   'reading_depth_summary' — on destroy with overall stats
  */
-export function createPostHogAdapter(posthog, options = {}) {
+export function createPostHogAdapter(posthog = window.posthog, options = {}) {
   const eventPrefix = options.eventPrefix || 'reading_depth';
 
   return {
