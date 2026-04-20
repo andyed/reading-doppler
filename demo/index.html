@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading Doppler — Live Demo</title>
+<meta property="og:type" content="article">
+<meta property="og:title" content="Reading Doppler — Live Demo">
+<meta property="og:description" content="Pick a long-form reading. Press 'd' to see what Reading Doppler captured about your dwell.">
+<meta property="og:image" content="../assets/brand/social-header.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/brand/favicon-32.png">
+<link rel="icon" type="image/png" sizes="128x128" href="../assets/brand/favicon-128.png">
+<script src="reading-doppler.js"></script>
+<script>
+  !function(t,e){var o,n,p,l;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(l=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,l);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('phc_NCpTo2Gg48Uk7jEQ0udxLL9TEvMuWvzqqjo1h6Q9Upz', {
+    api_host: 'https://us.i.posthog.com',
+    person_profiles: 'identified_only',
+    persistence: 'memory'
+  });
+</script>
+<style>
+  :root {
+    --bg: rgb(10, 10, 15);
+    --text: rgb(228, 228, 216);
+    --bright: rgb(210, 210, 200);
+    --dim: rgb(170, 170, 175);
+    --border: rgba(80, 180, 200, 0.15);
+    --band-top: rgb(120, 210, 230);
+    --band-mid: rgb(220, 170, 50);
+    --band-bot: rgb(165, 180, 200);
+    --cyan: rgb(80, 180, 200);
+    --prose: 680px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text);
+    font-family: Georgia, 'Iowan Old Style', 'Palatino', serif; line-height: 1.75; }
+  body { padding-bottom: 6rem; }
+
+  .site-nav { position: sticky; top: 0; z-index: 60;
+    background: rgba(10, 10, 15, 0.94); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 1.25rem; display: flex; gap: 1.25rem; align-items: center;
+    font-family: -apple-system, system-ui, sans-serif; font-size: 0.85rem; }
+  .site-nav .brand { font-weight: 700; letter-spacing: 0.03em; color: var(--cyan); text-decoration: none; }
+  .site-nav a { color: var(--dim); text-decoration: none; }
+  .site-nav a:hover { color: var(--cyan); }
+  .site-nav .kbd-hint { margin-left: auto; font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.75rem; color: var(--dim); }
+  .site-nav kbd { background: rgba(80, 180, 200, 0.12); border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 3px; color: var(--bright); }
+
+  .picker { max-width: var(--prose); margin: 0 auto; padding: 2.5rem 1.5rem 0;
+    font-family: -apple-system, system-ui, sans-serif; }
+  .picker h2 { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--dim); margin-bottom: 0.75rem; }
+  .picker .picks { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .pick-btn { background: rgba(80, 180, 200, 0.05); border: 1px solid var(--border);
+    color: var(--bright); padding: 0.85rem 1rem; border-radius: 4px;
+    text-align: left; font-family: inherit; font-size: 0.92rem; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s; line-height: 1.4; }
+  .pick-btn:hover { background: rgba(80, 180, 200, 0.14); border-color: var(--cyan); }
+  .pick-btn.active { background: rgba(80, 180, 200, 0.2); border-color: var(--cyan); color: var(--text); }
+  .pick-btn .title { font-weight: 600; }
+  .pick-btn .subtitle { color: var(--dim); font-size: 0.78rem; margin-top: 2px; }
+
+  article { max-width: var(--prose); margin: 0 auto; padding: 2rem 1.5rem 4rem;
+    min-height: 40vh; }
+  article.loading { opacity: 0.35; }
+  article h1 { font-size: clamp(1.8rem, 4vw, 2.3rem); line-height: 1.2;
+    font-family: -apple-system, system-ui, sans-serif; font-weight: 800;
+    letter-spacing: -0.02em; margin-bottom: 1rem; }
+  article h2 { font-size: 1.25rem; font-weight: 700; margin: 2rem 0 0.65rem;
+    color: var(--band-top); font-family: -apple-system, system-ui, sans-serif;
+    letter-spacing: -0.01em; }
+  article h3 { font-size: 1.08rem; font-weight: 700; margin: 1.5rem 0 0.5rem;
+    color: var(--bright); font-family: -apple-system, system-ui, sans-serif; }
+  article p { margin-bottom: 1.1rem; }
+  article blockquote { margin: 1.3rem 0; padding: 0.35rem 0 0.35rem 1rem;
+    border-left: 3px solid var(--cyan); color: var(--bright); font-style: italic; }
+  article .dateline { color: var(--dim); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.8rem; margin-bottom: 2rem; }
+  article .answer { margin-bottom: 3rem; padding-bottom: 2rem;
+    border-bottom: 1px dashed var(--border); }
+  article .answer:last-child { border-bottom: none; }
+  article .answer-head { margin-bottom: 1rem; }
+  article .answer-title { font-size: 1.35rem; font-weight: 700; line-height: 1.3;
+    font-family: -apple-system, system-ui, sans-serif; letter-spacing: -0.01em;
+    color: var(--text); margin-bottom: 0.25rem; }
+  article .answer-meta { font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.78rem; color: var(--dim); }
+  article .answer.ad .answer-title::before { content: 'Sponsored  ';
+    color: var(--band-mid); font-weight: 600; font-size: 0.72em; letter-spacing: 0.1em;
+    vertical-align: 2px; }
+  article code { font-family: ui-monospace, Menlo, monospace; font-size: 0.88em;
+    background: rgba(80, 180, 200, 0.08); padding: 0.1em 0.35em; border-radius: 3px;
+    color: rgb(200, 232, 238); }
+  article a { color: var(--cyan); }
+
+  /* Constitution content — marginalia scaffolds amendments as <section> with nested
+     <h2> + <p>. Our h2 rule handles those, along with div.amendment wrappers. */
+  article section { margin-bottom: 2.5rem; }
+
+  /* Reading-doppler debug overlay (hidden by default; 'd' toggles) */
+  .rd-debug-on .debug-panel { transform: translateX(0); }
+  .debug-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 380px;
+    background: rgba(14, 14, 20, 0.96); backdrop-filter: blur(10px);
+    border-left: 1px solid var(--border); z-index: 100;
+    transform: translateX(100%); transition: transform 0.25s ease;
+    overflow-y: auto; padding: 1rem 1.15rem;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.78rem;
+    color: var(--bright); line-height: 1.5;
+  }
+  .debug-panel h3 { font-family: -apple-system, system-ui, sans-serif;
+    font-size: 0.9rem; font-weight: 700; color: var(--cyan);
+    letter-spacing: 0.03em; text-transform: uppercase;
+    margin: 1rem 0 0.4rem; }
+  .debug-panel h3:first-child { margin-top: 0; }
+  .debug-panel .stat-row { display: flex; justify-content: space-between; padding: 2px 0;
+    border-bottom: 1px dashed rgba(80, 180, 200, 0.08); }
+  .debug-panel .stat-row .k { color: var(--dim); }
+  .debug-panel .stat-row .v { color: var(--text); }
+  .debug-panel table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+  .debug-panel th, .debug-panel td { padding: 3px 4px; text-align: right;
+    border-bottom: 1px solid rgba(80, 180, 200, 0.06); }
+  .debug-panel th:first-child, .debug-panel td:first-child { text-align: left;
+    max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .debug-panel th { color: var(--dim); font-weight: 400; font-family: -apple-system, sans-serif; }
+  .debug-panel .swatch { display: inline-block; width: 6px; height: 12px;
+    vertical-align: middle; margin-right: 4px; border-radius: 1px; }
+
+  /* Dominant-band stripe on tracked paragraphs when debug is on */
+  .rd-debug-on article [data-rd-id] { position: relative; padding-left: 14px; }
+  .rd-debug-on article [data-rd-id]::before {
+    content: ''; position: absolute; left: 0; top: 0.3em; bottom: 0.3em; width: 4px;
+    background: var(--band-top); opacity: 0; transition: opacity 0.3s;
+  }
+  .rd-debug-on article [data-rd-id][data-rd-dominant="top"]::before { opacity: 1; background: var(--band-top); }
+  .rd-debug-on article [data-rd-id][data-rd-dominant="mid"]::before { opacity: 1; background: var(--band-mid); }
+  .rd-debug-on article [data-rd-id][data-rd-dominant="bot"]::before { opacity: 1; background: var(--band-bot); }
+
+  .hint-toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: rgba(80, 180, 200, 0.14); color: var(--bright);
+    border: 1px solid var(--border); padding: 0.55rem 1rem; border-radius: 4px;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.78rem;
+    z-index: 40; transition: opacity 0.6s; }
+  .hint-toast kbd { background: rgba(80, 180, 200, 0.18); padding: 1px 6px;
+    border-radius: 3px; color: var(--bright); }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="brand" href="https://github.com/andyed/reading-doppler">reading doppler</a>
+  <a href="https://github.com/andyed/reading-doppler">github</a>
+  <a href="https://github.com/andyed/reading-doppler/blob/main/docs/validation/viewport-bands.md">calibration</a>
+  <span class="kbd-hint">press <kbd>d</kbd> to toggle debug</span>
+</nav>
+
+<div class="picker">
+  <h2>Pick a reading</h2>
+  <div class="picks" id="picks"></div>
+</div>
+
+<article id="article" class="loading">
+  <p class="dateline" style="text-align:center; margin-top:2rem">loading…</p>
+</article>
+
+<div class="hint-toast" id="hint-toast">press <kbd>d</kbd> to toggle the debug panel</div>
+
+<aside class="debug-panel" id="debug-panel">
+  <h3>session</h3>
+  <div class="stat-row"><span class="k">content</span><span class="v" id="dbg-content">—</span></div>
+  <div class="stat-row"><span class="k">session_id</span><span class="v" id="dbg-session">—</span></div>
+  <div class="stat-row"><span class="k">flushes</span><span class="v" id="dbg-flushes">0</span></div>
+  <div class="stat-row"><span class="k">paragraphs tracked</span><span class="v" id="dbg-tracked">0</span></div>
+  <div class="stat-row"><span class="k">viewport h (load)</span><span class="v" id="dbg-vh-load">—</span></div>
+  <div class="stat-row"><span class="k">viewport h (now)</span><span class="v" id="dbg-vh-now">—</span></div>
+
+  <h3>per-paragraph bands (ms)</h3>
+  <table id="dbg-table">
+    <thead><tr>
+      <th>id</th>
+      <th title="top-band dwell"><span class="swatch" style="background:var(--band-top)"></span>top</th>
+      <th title="mid-band dwell"><span class="swatch" style="background:var(--band-mid)"></span>mid</th>
+      <th title="bot-band dwell"><span class="swatch" style="background:var(--band-bot)"></span>bot</th>
+      <th title="any-intersection dwell">any</th>
+    </tr></thead>
+    <tbody id="dbg-table-body">
+      <tr><td colspan="5" style="color:var(--dim); text-align:center; font-style:italic">Scroll to populate…</td></tr>
+    </tbody>
+  </table>
+
+  <h3>summary</h3>
+  <pre id="dbg-summary" style="white-space:pre-wrap; font-size:0.72rem; color:var(--bright); margin-top:0.3rem">—</pre>
+</aside>
+
+<script>
+(function() {
+  'use strict';
+  if (!window.ReadingDopplerLib) {
+    console.error('ReadingDopplerLib not loaded');
+    return;
+  }
+  var RD = window.ReadingDopplerLib;
+
+  // ---------- Available readings ----------
+  // AR Q&A content is fetched live from approach-retreat's gh-pages so we
+  // reuse the actual editorial corpus rather than maintaining a copy.
+  // Constitution is fetched from marginalia's gh-pages for the same reason.
+  var AR_BASE = 'https://andyed.github.io/approach-retreat/data';
+  var CONSTITUTION_URL = 'https://andyed.github.io/marginalia/pandoc/examples/us-constitution.html';
+
+  var READINGS = [
+    { id: 'ai-existential-threat',  kind: 'ar',
+      title: 'Will AI be an existential threat?',     subtitle: '10 answers · 2011–2025 · technical / philosophical' },
+    { id: 'cats-intelligent',       kind: 'ar',
+      title: 'Are cats intelligent?',                  subtitle: '6 answers · when the research actually changed' },
+    { id: 'a-team-dumbest-great',   kind: 'ar',
+      title: 'Is The A-Team the dumbest great show?',  subtitle: '6 answers · 1984–2024 · nostalgic / critical' },
+    { id: 'sunset-favorite',        kind: 'ar',
+      title: 'What was your favorite sunset?',         subtitle: '6 answers · memory over measurement' },
+    { id: 'us-constitution',        kind: 'marginalia',
+      title: 'The US Constitution',                    subtitle: 'preamble + 7 articles + amendments' },
+  ];
+
+  // ---------- State ----------
+  var rd = null;
+  var flushCount = 0;
+  var sessionId = null;
+  var currentReading = null;
+  var loadSeq = 0; // race guard when users click multiple picks quickly
+
+  var articleEl = document.getElementById('article');
+  var picksEl = document.getElementById('picks');
+
+  var dbgContent = document.getElementById('dbg-content');
+  var dbgSession = document.getElementById('dbg-session');
+  var dbgFlushes = document.getElementById('dbg-flushes');
+  var dbgTracked = document.getElementById('dbg-tracked');
+  var dbgVhLoad = document.getElementById('dbg-vh-load');
+  var dbgVhNow = document.getElementById('dbg-vh-now');
+  var dbgTableBody = document.getElementById('dbg-table-body');
+  var dbgSummary = document.getElementById('dbg-summary');
+
+  // ---------- Picker ----------
+  READINGS.forEach(function(r) {
+    var b = document.createElement('button');
+    b.className = 'pick-btn';
+    b.innerHTML = '<div class="title">' + escapeHtml(r.title) + '</div>' +
+                  '<div class="subtitle">' + escapeHtml(r.subtitle) + '</div>';
+    b.addEventListener('click', function() { loadReading(r); });
+    picksEl.appendChild(b);
+  });
+
+  function setActivePick(id) {
+    var btns = picksEl.querySelectorAll('.pick-btn');
+    btns.forEach(function(b, i) { b.classList.toggle('active', READINGS[i].id === id); });
+  }
+
+  // ---------- Content fetch + render ----------
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function loadReading(r) {
+    var seq = ++loadSeq;
+    setActivePick(r.id);
+    articleEl.classList.add('loading');
+    articleEl.innerHTML = '<p class="dateline" style="text-align:center; margin-top:2rem">loading…</p>';
+
+    var fetchP = (r.kind === 'ar')
+      ? fetchARAnswers(r.id).then(function(answers) { return renderAR(r, answers); })
+      : fetchConstitution(r).then(function(html) { return renderConstitution(r, html); });
+
+    fetchP.then(function() {
+      if (seq !== loadSeq) return;  // a newer pick superseded us
+      articleEl.classList.remove('loading');
+      stampRdIds();
+      currentReading = r;
+      dbgContent.textContent = r.id;
+      startReadingDoppler(r);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      // Update URL hash so deep-linking works
+      if (window.history.replaceState) {
+        window.history.replaceState({}, '', '#' + r.id);
+      }
+    }).catch(function(err) {
+      articleEl.innerHTML = '<h1>Failed to load</h1><p class="dateline">' + escapeHtml(err.message) + '</p>';
+      articleEl.classList.remove('loading');
+    });
+  }
+
+  function fetchARAnswers(id) {
+    return fetch(AR_BASE + '/' + id + '.json').then(function(r) {
+      if (!r.ok) throw new Error('AR fetch failed: ' + r.status);
+      return r.json();
+    });
+  }
+
+  function renderAR(meta, answers) {
+    var h1 = '<h1>' + escapeHtml(meta.title) + '</h1>';
+    var dateline = '<p class="dateline">approach-retreat Q&amp;A · fetched from andyed.github.io/approach-retreat</p>';
+    var sorted = answers.slice().sort(function(a, b) { return (a.position || 0) - (b.position || 0); });
+    var sections = sorted.map(function(a) {
+      var isAd = a.type === 'ad';
+      var title = '<div class="answer-title">' + escapeHtml(a.title || '') + '</div>';
+      var metaLine = [a.author, a.author_bio, a.year, (a.upvotes ? a.upvotes.toLocaleString() + ' upvotes' : '')]
+        .filter(Boolean).map(escapeHtml).join(' · ');
+      var metaEl = metaLine ? '<div class="answer-meta">' + metaLine + '</div>' : '';
+      var body = (a.full_text || '')
+        .split(/\n{2,}/)
+        .map(function(p) { return '<p>' + escapeHtml(p.trim()) + '</p>'; })
+        .join('');
+      return '<section class="answer' + (isAd ? ' ad' : '') + '">' +
+             '<div class="answer-head">' + title + metaEl + '</div>' +
+             body + '</section>';
+    }).join('');
+    articleEl.innerHTML = h1 + dateline + sections;
+  }
+
+  function fetchConstitution() {
+    return fetch(CONSTITUTION_URL).then(function(r) {
+      if (!r.ok) throw new Error('Constitution fetch failed: ' + r.status);
+      return r.text();
+    });
+  }
+
+  function renderConstitution(meta, html) {
+    var doc = new DOMParser().parseFromString(html, 'text/html');
+    // marginalia's pandoc template puts article content inside <main>. Strip
+    // any scripts, styles, or marginalia-specific decoration.
+    var main = doc.querySelector('main') || doc.body;
+    // Clone, then remove elements we don't want to render (scripts, links, styles, inline SVGs etc.)
+    var clone = main.cloneNode(true);
+    clone.querySelectorAll('script, style, link, nav').forEach(function(n) { n.remove(); });
+    // marginalia uses <aside class="mg-sidenote"> etc. — keep them but strip classes
+    // so they render as plain inline asides in our theme.
+    clone.querySelectorAll('aside').forEach(function(a) {
+      a.style.cssText = 'color: var(--dim); font-size: 0.88em; margin: 0.6rem 0; padding-left: 0.75rem; border-left: 2px solid var(--border);';
+    });
+    var h1 = '<h1>' + escapeHtml(meta.title) + '</h1>';
+    var dateline = '<p class="dateline">via marginalia · fetched from andyed.github.io/marginalia</p>';
+    articleEl.innerHTML = h1 + dateline + clone.innerHTML;
+  }
+
+  // Stamp deterministic data-rd-id on every paragraph-like element so the
+  // dominant-band stripe can target them. The library uses the same
+  // convention internally (contentAttr = 'rdId' points at data-rd-id).
+  function stampRdIds() {
+    var selector = 'p, li, blockquote, h1, h2, h3, h4, h5, h6, figcaption';
+    var nodes = articleEl.querySelectorAll(selector);
+    nodes.forEach(function(el, i) {
+      var text = el.textContent.trim();
+      if (!text) return;
+      var words = text.split(/\s+/).filter(function(w) { return w.length > 0; });
+      if (words.length === 0) return;
+      var slug = words.slice(0, 4).join('-').toLowerCase().replace(/[^a-z0-9-]/g, '');
+      el.setAttribute('data-rd-id', 'p' + i + '-' + slug);
+    });
+  }
+
+  // ---------- Reading Doppler ----------
+
+  function startReadingDoppler(reading) {
+    if (rd) { try { rd.destroy(); } catch (e) {} }
+    flushCount = 0;
+    sessionId = 'rd_demo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    dbgSession.textContent = sessionId.slice(0, 22) + '…';
+
+    rd = new RD.ReadingDoppler({
+      flushInterval: 4000,
+      contentAttr: 'rdId',
+      onFlush: function(paragraphs, meta) {
+        flushCount = meta.flush_number;
+        updateDebug();
+        forwardToPostHog(reading, paragraphs, meta);
+      }
+    });
+    rd.observe(articleEl);
+    updateDebug();
+  }
+
+  function forwardToPostHog(reading, paragraphs, meta) {
+    try {
+      var totalVisible = paragraphs.reduce(function(s, p) { return s + p.visible_ms; }, 0);
+      var totalExpected = paragraphs.reduce(function(s, p) { return s + p.expected_ms; }, 0);
+      var avgAbsorption = paragraphs.reduce(function(s, p) { return s + p.absorption; }, 0) / paragraphs.length;
+      var paragraphs_banded = paragraphs
+        .filter(function(p) { return (p.rd_any_ms || 0) > 0; })
+        .map(function(p) {
+          return {
+            id: p.id,
+            paragraph_index: p.paragraph_index,
+            paragraph_position_frac: p.paragraph_position_frac,
+            rd_any_ms: p.rd_any_ms,
+            rd_top_ms: p.rd_top_ms,
+            rd_mid_ms: p.rd_mid_ms,
+            rd_bot_ms: p.rd_bot_ms,
+          };
+        });
+      window.posthog.capture('reading_doppler_flush', {
+        surface: 'demo',
+        content_id: reading.id,
+        content_kind: reading.kind,
+        session_id: sessionId,
+        flush_number: meta.flush_number,
+        paragraphs_seen: paragraphs.length,
+        total_visible_ms: Math.round(totalVisible),
+        total_expected_ms: Math.round(totalExpected),
+        avg_absorption: parseFloat(avgAbsorption.toFixed(2)),
+        paragraphs_banded: paragraphs_banded,
+      });
+    } catch (e) { /* posthog not ready yet */ }
+  }
+
+  function updateDebug() {
+    if (!rd) return;
+    var snap = rd.snapshot();
+    var summary = rd.summary();
+
+    dbgFlushes.textContent = flushCount;
+    dbgTracked.textContent = snap.length;
+    dbgVhLoad.textContent = (summary ? summary.rd_viewport_h : '—') + 'px';
+    dbgVhNow.textContent = window.innerHeight + 'px';
+
+    if (snap.length === 0) {
+      dbgTableBody.innerHTML =
+        '<tr><td colspan="5" style="color:var(--dim);text-align:center;font-style:italic">Scroll to populate…</td></tr>';
+    } else {
+      var rows = snap
+        .slice()
+        .sort(function(a, b) { return a.paragraph_index - b.paragraph_index; })
+        .map(function(p) {
+          var shortId = p.id.length > 18 ? p.id.slice(0, 18) + '…' : p.id;
+          return '<tr title="' + escapeHtml(p.id) + '">' +
+            '<td>' + escapeHtml(shortId) + '</td>' +
+            '<td>' + (p.rd_top_ms || 0) + '</td>' +
+            '<td>' + (p.rd_mid_ms || 0) + '</td>' +
+            '<td>' + (p.rd_bot_ms || 0) + '</td>' +
+            '<td>' + (p.rd_any_ms || 0) + '</td>' +
+          '</tr>';
+        }).join('');
+      dbgTableBody.innerHTML = rows;
+    }
+
+    if (summary) {
+      dbgSummary.textContent =
+        'paragraphs: ' + summary.paragraphs_total + ' tracked, ' +
+        summary.paragraphs_seen + ' seen (' +
+        summary.paragraphs_read + ' read, ' +
+        summary.paragraphs_skimmed + ' skimmed, ' +
+        summary.paragraphs_studied + ' studied)\n' +
+        'total visible: ' + (summary.total_visible_ms / 1000).toFixed(1) + 's / ' +
+        'expected: ' + (summary.total_expected_ms / 1000).toFixed(1) + 's\n' +
+        'overall absorption: ' + summary.overall_absorption.toFixed(2) + ' ' +
+        '(avg per-para: ' + summary.avg_absorption.toFixed(2) + ')\n' +
+        'schema: ' + summary.rd_viewport_band_schema;
+    } else {
+      dbgSummary.textContent = '— (start reading to populate)';
+    }
+
+    // Dominant band stripe — mark each tracked paragraph
+    snap.forEach(function(p) {
+      var el = document.querySelector('[data-rd-id="' + CSS.escape(p.id) + '"]');
+      if (!el) return;
+      var top = p.rd_top_ms || 0, mid = p.rd_mid_ms || 0, bot = p.rd_bot_ms || 0;
+      var max = Math.max(top, mid, bot);
+      if (max <= 0) return;
+      var dominant = max === top ? 'top' : (max === mid ? 'mid' : 'bot');
+      el.setAttribute('data-rd-dominant', dominant);
+    });
+  }
+
+  // ---------- Keyboard ----------
+  var debugOn = false;
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'd' || e.metaKey || e.ctrlKey || e.altKey) return;
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    e.preventDefault();
+    debugOn = !debugOn;
+    document.body.classList.toggle('rd-debug-on', debugOn);
+    if (debugOn) updateDebug();
+  });
+
+  // Keep debug live on scroll/resize even without a flush
+  var rafDebugId = null;
+  function scheduleDebugUpdate() {
+    if (!debugOn) return;
+    if (rafDebugId != null) return;
+    rafDebugId = requestAnimationFrame(function() {
+      rafDebugId = null;
+      updateDebug();
+    });
+  }
+  window.addEventListener('scroll', scheduleDebugUpdate, { passive: true });
+  window.addEventListener('resize', scheduleDebugUpdate);
+
+  // ---------- Final summary on unload ----------
+  window.addEventListener('beforeunload', function() {
+    if (!rd) return;
+    try {
+      var summary = rd.summary();
+      if (summary && currentReading) {
+        window.posthog.capture('reading_doppler_summary', Object.assign(
+          { surface: 'demo', content_id: currentReading.id, content_kind: currentReading.kind,
+            session_id: sessionId }, summary
+        ));
+      }
+    } catch (e) {}
+    try { rd.destroy(); } catch (e) {}
+  });
+
+  // ---------- Hint toast fade ----------
+  setTimeout(function() {
+    var t = document.getElementById('hint-toast');
+    if (t) { t.style.opacity = '0'; setTimeout(function() { t.remove(); }, 700); }
+  }, 5000);
+
+  // ---------- Boot ----------
+  // Deep-link support: #<content-id> selects that reading on load.
+  var initialId = (window.location.hash || '').replace(/^#/, '');
+  var initial = READINGS.find(function(r) { return r.id === initialId; }) || READINGS[0];
+  loadReading(initial);
+})();
+</script>
+
+</body>
+</html>
