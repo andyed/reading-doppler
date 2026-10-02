@@ -38,6 +38,11 @@ const rd = new ReadingDoppler({
 rd.observe(document.querySelector('article'));
 ```
 
+The tracker still snapshots cumulative dwell every 10 seconds. Its PostHog
+adapter sends a checkpoint only when a new paragraph appears, at least two
+minutes after the previous checkpoint, and at most 12 times per page. Call
+`adapter.onDestroy(rd.summary())` on page exit for the final aggregate.
+
 ## What it emits
 
 Each paragraph flushes with:
@@ -92,6 +97,7 @@ Same palette, same 8:1 contrast commitment, same "brand glyph literally diagrams
 ```bash
 node build.js             # rebuild dist/reading-doppler.js (IIFE)
 npm run test:parity       # JS + Python parity check on band math
+npm run test:adapter      # PostHog checkpoint and summary behavior
 python3 scripts/brand.py  # regenerate brand assets
 npx serve test            # visual test page with debug panel
 ```

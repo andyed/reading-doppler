@@ -1,6 +1,6 @@
 {
   "name": "reading-doppler",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Paragraph-level reading tracker with viewport-band decomposition. As the reader scrolls, each paragraph shifts through top/mid/bot thirds — the ms accumulated in each band is a Doppler-like signature of attention.",
   "main": "dist/reading-doppler.js",
   "module": "src/index.js",
@@ -8,7 +8,8 @@
   "scripts": {
     "build": "node build.js",
     "dev": "npx serve test",
-    "test:parity": "node scripts/test_viewport_bands_parity.js && python3 scripts/test_viewport_bands_parity.py"
+    "test:parity": "node scripts/test_viewport_bands_parity.js && python3 scripts/test_viewport_bands_parity.py",
+    "test:adapter": "node scripts/test-posthog-adapter.mjs"
   },
   "keywords": ["analytics", "reading-time", "dwell-time", "content-analytics", "posthog", "viewport-bands"],
   "license": "MIT",

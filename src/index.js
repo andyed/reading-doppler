@@ -36,6 +36,8 @@ import { classifyParagraphInViewport, computeViewportBandsPure } from './viewpor
 const DEFAULT_WPM = 238; // Brysbaert (2019) silent reading average
 const VISIBILITY_THRESHOLD = 0.5; // 50% of paragraph must be visible for absorption
 const FLUSH_INTERVAL_MS = 10_000; // report every 10s
+const CHECKPOINT_MIN_INTERVAL_MS = 2 * 60_000;
+const CHECKPOINT_LIMIT = 12;
 const MIN_VISIBLE_MS = 500; // ignore sub-500ms flickers
 const VIEWPORT_BAND_SCHEMA = 'reading-doppler-vpbands-v1';
 
@@ -46,7 +48,7 @@ const VIEWPORT_BAND_SCHEMA = 'reading-doppler-vpbands-v1';
 // they remain bare identifiers, `typeof` short-circuits to 'undefined', and we
 // fall back to the dev defaults. After a build, e.g. `typeof "0.2.0"` is
 // 'string', so the literal is used. Fallback version must track package.json.
-const RD_VERSION = (typeof __RD_VERSION__ !== 'undefined') ? __RD_VERSION__ : '0.2.0';
+const RD_VERSION = (typeof __RD_VERSION__ !== 'undefined') ? __RD_VERSION__ : '0.2.1';
 const RD_BUILD = (typeof __RD_BUILD__ !== 'undefined') ? __RD_BUILD__ : 'dev';
 
 export class ReadingDoppler {
@@ -545,10 +547,20 @@ export { computeViewportBandsPure, classifyParagraphInViewport };
  */
 export function createPostHogAdapter(posthog = window.posthog, options = {}) {
   const eventPrefix = options.eventPrefix || 'reading_doppler';
+  const seenAtLastCheckpoint = new Set();
+  let lastCheckpointAt = -Infinity;
+  let checkpointsSent = 0;
 
   return {
     onFlush(paragraphs, meta) {
-      // Send summary-level event (not per-paragraph, to avoid event volume explosion)
+      // ReadingDoppler snapshots cumulative dwell every 10s. A PostHog event
+      // needs newly reached content, and is bounded even in long open tabs.
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (checkpointsSent >= CHECKPOINT_LIMIT) return;
+      if (!paragraphs.some(p => !seenAtLastCheckpoint.has(p.id))) return;
+      const now = Date.now();
+      if (now - lastCheckpointAt < CHECKPOINT_MIN_INTERVAL_MS) return;
+
       const totalVisible = paragraphs.reduce((s, p) => s + p.visible_ms, 0);
       const totalExpected = paragraphs.reduce((s, p) => s + p.expected_ms, 0);
       const avgAbsorption = paragraphs.reduce((s, p) => s + p.absorption, 0) / paragraphs.length;
@@ -586,6 +598,9 @@ export function createPostHogAdapter(posthog = window.posthog, options = {}) {
           .map(p => ({ id: p.id, words: p.words, absorption: p.absorption })),
         paragraphs_banded,
       });
+      paragraphs.forEach(p => seenAtLastCheckpoint.add(p.id));
+      lastCheckpointAt = now;
+      checkpointsSent++;
     },
 
     onDestroy(summary) {
