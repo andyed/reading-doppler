@@ -1,5 +1,5 @@
 /**
- * ReadingDoppler v0.2.1 (build 2026-10-02)
+ * ReadingDoppler v0.2.2 (build 2026-10-02)
  * Paragraph-level reading time tracker with viewport-band decomposition.
  * https://github.com/andyed/reading-doppler
  */
@@ -154,18 +154,17 @@ const DEFAULT_WPM = 238; // Brysbaert (2019) silent reading average
 const VISIBILITY_THRESHOLD = 0.5; // 50% of paragraph must be visible for absorption
 const FLUSH_INTERVAL_MS = 10_000; // report every 10s
 const CHECKPOINT_MIN_INTERVAL_MS = 2 * 60_000;
-const CHECKPOINT_LIMIT = 12;
 const MIN_VISIBLE_MS = 500; // ignore sub-500ms flickers
 const VIEWPORT_BAND_SCHEMA = 'reading-doppler-vpbands-v1';
 
-// Version stamp. build.js replaces the `"0.2.1"` / `"2026-10-02"`
+// Version stamp. build.js replaces the `"0.2.2"` / `"2026-10-02"`
 // tokens with real literals at build time (the custom string-replace build,
 // not esbuild define). The typeof guard keeps the un-built ESM source safe to
 // import directly (tests, Node consumers): when the tokens are NOT replaced
 // they remain bare identifiers, `typeof` short-circuits to 'undefined', and we
 // fall back to the dev defaults. After a build, e.g. `typeof "0.2.0"` is
 // 'string', so the literal is used. Fallback version must track package.json.
-const RD_VERSION = (typeof "0.2.1" !== 'undefined') ? "0.2.1" : '0.2.1';
+const RD_VERSION = (typeof "0.2.2" !== 'undefined') ? "0.2.2" : '0.2.2';
 const RD_BUILD = (typeof "2026-10-02" !== 'undefined') ? "2026-10-02" : 'dev';
 
 class ReadingDoppler {
@@ -666,14 +665,12 @@ function createPostHogAdapter(posthog = window.posthog, options = {}) {
   const eventPrefix = options.eventPrefix || 'reading_doppler';
   const seenAtLastCheckpoint = new Set();
   let lastCheckpointAt = -Infinity;
-  let checkpointsSent = 0;
 
   return {
     onFlush(paragraphs, meta) {
       // ReadingDoppler snapshots cumulative dwell every 10s. A PostHog event
-      // needs newly reached content, and is bounded even in long open tabs.
+      // needs newly reached content, and is rate-limited during long reads.
       if (typeof document !== 'undefined' && document.hidden) return;
-      if (checkpointsSent >= CHECKPOINT_LIMIT) return;
       if (!paragraphs.some(p => !seenAtLastCheckpoint.has(p.id))) return;
       const now = Date.now();
       if (now - lastCheckpointAt < CHECKPOINT_MIN_INTERVAL_MS) return;
@@ -717,7 +714,6 @@ function createPostHogAdapter(posthog = window.posthog, options = {}) {
       });
       paragraphs.forEach(p => seenAtLastCheckpoint.add(p.id));
       lastCheckpointAt = now;
-      checkpointsSent++;
     },
 
     onDestroy(summary) {

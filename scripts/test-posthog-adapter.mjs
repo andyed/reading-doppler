@@ -34,14 +34,14 @@ try {
   adapter.onFlush([paragraph(1), paragraph(2)], { flush_number: 5 });
   assert.equal(captures.length, 2, 'pending progress emits when visible');
 
-  for (let id = 3; id <= 13; id++) {
+  for (let id = 3; id <= 15; id++) {
     now += 120_000;
     adapter.onFlush([paragraph(id)], { flush_number: id + 3 });
   }
-  assert.equal(captures.length, 12, 'page cap bounds checkpoint volume');
-  adapter.onDestroy({ paragraphs_total: 13 });
+  assert.equal(captures.length, 15, 'long reads continue past twelve new-content checkpoints');
+  adapter.onDestroy({ paragraphs_total: 15 });
   assert.equal(captures.at(-1)[0], 'reading_doppler_summary');
-  assert.equal(captures.at(-1)[1].paragraphs_total, 13);
+  assert.equal(captures.at(-1)[1].paragraphs_total, 15);
   console.log('PostHog adapter checkpoint policy and final summary passed');
 } finally {
   Date.now = originalNow;

@@ -49,7 +49,7 @@ Session summaries include `rd_viewport_band_basis_px` (current viewport-h at sum
 ## Integration
 
 First consumer: SciprogFi (`~/Documents/dev/sciprogfi-web/`). PostHog adapter sends:
-- `reading_doppler_flush` — new-paragraph checkpoints, at most one every two minutes and 12 per page, with top-absorbed, skipped, and `paragraphs_banded` array
+- `reading_doppler_flush` — new-paragraph checkpoints, at most one every two minutes, with top-absorbed, skipped, and `paragraphs_banded` array
 - `reading_doppler_summary` — on page exit with overall stats + basis disclosure
 
 ## Commands

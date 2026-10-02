@@ -40,7 +40,8 @@ rd.observe(document.querySelector('article'));
 
 The tracker still snapshots cumulative dwell every 10 seconds. Its PostHog
 adapter sends a checkpoint only when a new paragraph appears, at least two
-minutes after the previous checkpoint, and at most 12 times per page. Call
+minutes after the previous checkpoint. Long reads can keep reporting newly
+reached content. Call
 `adapter.onDestroy(rd.summary())` on page exit for the final aggregate.
 
 ## What it emits
